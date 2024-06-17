@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 
@@ -14,11 +16,21 @@ export default function Home() {
   const [streams, setStreams] = useState<{ [key: string]: string | null }>({});
 
   const handleStartStream = (ip: string) => {
-    setStreams((prev) => ({ ...prev, [ip]: `http://${ip}:8889/mystream` }));
+    console.log(`Start stream button clicked for IP: ${ip}`);
+    setStreams((prev) => {
+      const newStreams = { ...prev, [ip]: `http://${ip}:8889/cam` };
+      console.log(`Updated streams state:`, newStreams);
+      return newStreams;
+    });
   };
 
   const handleStopStream = (ip: string) => {
-    setStreams((prev) => ({ ...prev, [ip]: null }));
+    console.log(`Stop stream button clicked for IP: ${ip}`);
+    setStreams((prev) => {
+      const newStreams = { ...prev, [ip]: null };
+      console.log(`Updated streams state:`, newStreams);
+      return newStreams;
+    });
   };
 
   return (
@@ -37,6 +49,8 @@ export default function Home() {
                   height="480"
                   frameBorder="0"
                   allow="fullscreen"
+                  onLoad={() => console.log(`Stream loaded for IP: ${camera.ip}`)}
+                  onError={(e) => console.error(`Stream failed for IP: ${camera.ip}`, e)}
                 />
               ) : (
                 <CardMedia
