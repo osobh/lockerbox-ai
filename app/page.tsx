@@ -26,75 +26,6 @@ const FlatButton = styled(Button)({
   },
 });
 
-interface WebRTCVideoProps {
-  ip: string;
-}
-
-const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  const loadStream = () => {
-    const pc = new RTCPeerConnection();
-    const offerOptions = {
-      offerToReceiveAudio: true,
-      offerToReceiveVideo: true
-    };
-
-    pc.addEventListener('icecandidate', (event) => {
-      if (event.candidate) {
-        // Handle ICE candidate
-      }
-    });
-
-    pc.addEventListener('track', (event) => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = event.streams[0];
-      }
-    });
-
-    pc.createOffer(offerOptions)
-      .then(offer => pc.setLocalDescription(offer))
-      .then(() => {
-        if (pc.localDescription && pc.localDescription.sdp) {
-          fetch(`/cam/whep`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/sdp' },
-            body: pc.localDescription.sdp
-          })
-            .then(response => response.text())
-            .then(answer => {
-              const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
-              pc.setRemoteDescription(desc);
-            })
-            .catch(error => console.error('Error setting remote description:', error));
-        }
-      })
-      .catch(error => console.error('Error creating offer:', error));
-  };
-
-  useEffect(() => {
-    loadStream();
-  }, [ip]);
-
-  return (
-    <video
-      ref={videoRef}
-      width="640"
-      height="480"
-      autoPlay
-      muted
-      onLoadedData={(event) => {
-        const videoElement = event.currentTarget;
-        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-          console.error('Video dimensions are invalid.');
-        } else {
-          console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
-        }
-      }}
-    />
-  );
-};
-
 export default function Home() {
   const [streams, setStreams] = useState<{ [key: string]: string | MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
@@ -110,7 +41,7 @@ export default function Home() {
       startWebRTCStream(ip);
     } else {
       setStreams((prev) => {
-        const newStreams = { ...prev, [ip]: `/cam/whep` }; // Use WHEP endpoint with Nginx proxy
+        const newStreams = { ...prev, [ip]: `http://${ip}:8889/cam` };
         console.log(`Updated streams state:`, newStreams);
         return newStreams;
       });
