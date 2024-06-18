@@ -107,18 +107,28 @@ export default function Home() {
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
 
   const startWebRTCStream = async (ip: string) => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (!navigator.mediaDevices) {
       console.error('navigator.mediaDevices is not supported.');
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    setStreams((prev) => ({ ...prev, [ip]: stream }));
+
+    if (!navigator.mediaDevices.getUserMedia) {
+      console.error('navigator.mediaDevices.getUserMedia is not supported.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setStreams((prev) => ({ ...prev, [ip]: stream }));
+    } catch (error) {
+      console.error('Error accessing local camera:', error);
+    }
   };
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
     if (ip === 'local') {
-      startWebRTCStream(ip).catch(error => console.error('Error accessing local camera:', error));
+      startWebRTCStream(ip);
     } else {
       setStreams((prev) => {
         const newStreams = { ...prev, [ip]: `http://${ip}:8889/cam/whep` }; // Use WHEP endpoint
