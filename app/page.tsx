@@ -33,23 +33,15 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = () => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] // Add more STUN/TURN servers if needed
-    });
+    const pc = new RTCPeerConnection();
     const offerOptions = {
       offerToReceiveAudio: true,
-      offerToReceiveVideo: true
+      offerToReceiveVideo: true,
     };
 
     pc.addEventListener('icecandidate', (event) => {
       if (event.candidate) {
         // Handle ICE candidate
-      }
-    });
-
-    pc.addEventListener('iceconnectionstatechange', () => {
-      if (pc.iceConnectionState === 'failed') {
-        console.error('WebRTC: ICE failed, check your network connectivity.');
       }
     });
 
@@ -60,23 +52,29 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
     });
 
     pc.createOffer(offerOptions)
-      .then(offer => pc.setLocalDescription(offer))
+      .then((offer) => pc.setLocalDescription(offer))
       .then(() => {
-        if (pc.localDescription && pc.localDescription.sdp) {
+        const offer = pc.localDescription;
+        if (offer && offer.sdp) {
           fetch(`http://${ip}:8889/cam/whep`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/sdp' },
-            body: pc.localDescription.sdp
+            body: offer.sdp,
           })
-            .then(response => response.text())
-            .then(answer => {
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+              }
+              return response.text();
+            })
+            .then((answer) => {
               const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
               pc.setRemoteDescription(desc);
             })
-            .catch(error => console.error('Error setting remote description:', error));
+            .catch((error) => console.error('Error setting remote description:', error));
         }
       })
-      .catch(error => console.error('Error creating offer:', error));
+      .catch((error) => console.error('Error creating offer:', error));
   };
 
   useEffect(() => {
