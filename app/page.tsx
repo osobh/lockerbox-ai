@@ -34,7 +34,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
 
   const loadStream = () => {
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] // Add more STUN/TURN servers if needed
     });
     const offerOptions = {
       offerToReceiveAudio: true,
@@ -163,7 +163,23 @@ export default function Home() {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} />
+                  {camera.ip === 'local' ? (
+                    <video
+                      ref={(ref) => {
+                        if (ref && streams[camera.ip] && typeof streams[camera.ip] !== 'string') {
+                          ref.srcObject = streams[camera.ip] as MediaStream;
+                          ref.play();
+                        }
+                      }}
+                      width="640"
+                      height="480"
+                      autoPlay
+                      muted
+                      onLoadedData={() => console.log(`Loaded data for ${camera.ip}:`)}
+                    />
+                  ) : (
+                    <WebRTCVideo ip={camera.ip} />
+                  )}
                   {detecting[camera.ip] && (
                     <ObjectDetection streamUrl={streams[camera.ip]} />
                   )}
