@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection'; // Import the ObjectDetection component
@@ -26,8 +26,16 @@ const FlatButton = styled(Button)({
   },
 });
 
-const WebRTCVideo = ({ ip }) => {
-  const videoRef = useRef(null);
+interface WebRTCVideoProps {
+  ip: string;
+}
+
+interface WebRTCVideoProps {
+  ip: string;
+}
+
+const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = () => {
     const pc = new RTCPeerConnection();
@@ -43,26 +51,34 @@ const WebRTCVideo = ({ ip }) => {
     });
 
     pc.addEventListener('track', (event) => {
-      videoRef.current.srcObject = event.streams[0];
+      if (videoRef.current) {
+        videoRef.current.srcObject = event.streams[0];
+      }
     });
 
     pc.createOffer(offerOptions)
       .then(offer => pc.setLocalDescription(offer))
       .then(() => {
-        fetch(`http://${ip}:8889/cam/whep`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/sdp' },
-          body: pc.localDescription.sdp
-        })
-          .then(response => response.text())
-          .then(answer => {
-            const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
-            pc.setRemoteDescription(desc);
+        if (pc.localDescription && pc.localDescription.sdp) {
+          fetch(`http://${ip}:8889/cam/whep`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/sdp' },
+            body: pc.localDescription.sdp
           })
-          .catch(error => console.error('Error setting remote description:', error));
+            .then(response => response.text())
+            .then(answer => {
+              const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
+              pc.setRemoteDescription(desc);
+            })
+            .catch(error => console.error('Error setting remote description:', error));
+        }
       })
       .catch(error => console.error('Error creating offer:', error));
   };
+
+  useEffect(() => {
+    loadStream();
+  }, [ip]);
 
   return (
     <video
@@ -130,66 +146,9 @@ export default function Home() {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  {camera.ip === 'local' ? (
-                    <video
-                      ref={(ref) => {
-                        if (ref && streams[camera.ip] && typeof streams[camera.ip] !== 'string') {
-                          ref.srcObject = streams[camera.ip] as MediaStream;
-                          ref.play();
-                        } else if (ref && streams[camera.ip] && typeof streams[camera.ip] === 'string') {
-                          const pc = new RTCPeerConnection();
-                          const offerOptions = {
-                            offerToReceiveAudio: true,
-                            offerToReceiveVideo: true
-                          };
-
-                          pc.addEventListener('icecandidate', (event) => {
-                            if (event.candidate) {
-                              // Handle ICE candidate
-                            }
-                          });
-
-                          pc.addEventListener('track', (event) => {
-                            ref.srcObject = event.streams[0];
-                          });
-
-                          pc.createOffer(offerOptions)
-                            .then(offer => pc.setLocalDescription(offer))
-                            .then(() => {
-                              fetch(streams[camera.ip] as string, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/sdp' },
-                                body: pc.localDescription.sdp
-                              })
-                                .then(response => response.text())
-                                .then(answer => {
-                                  const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
-                                  pc.setRemoteDescription(desc);
-                                })
-                                .catch(error => console.error('Error setting remote description:', error));
-                            })
-                            .catch(error => console.error('Error creating offer:', error));
-                        }
-                      }}
-                      width="640"
-                      height="480"
-                      autoPlay
-                      muted
-                      onLoadedData={(event) => {
-                        const videoElement = event.currentTarget;
-                        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-                          console.error('Video dimensions are invalid.');
-                          handleStopStream(camera.ip);
-                        } else {
-                          console.log(`Loaded data for ${camera.ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <WebRTCVideo ip={camera.ip} />
-                  )}
+                  <WebRTCVideo ip={camera.ip} />
                   {detecting[camera.ip] && (
-                    <ObjectDetection stream={streams[camera.ip]} />
+                    <ObjectDetection streamUrl={streams[camera.ip]} />
                   )}
                 </div>
               ) : (
