@@ -33,7 +33,9 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = () => {
-    const pc = new RTCPeerConnection();
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
     const offerOptions = {
       offerToReceiveAudio: true,
       offerToReceiveVideo: true
@@ -42,6 +44,12 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
     pc.addEventListener('icecandidate', (event) => {
       if (event.candidate) {
         // Handle ICE candidate
+      }
+    });
+
+    pc.addEventListener('iceconnectionstatechange', () => {
+      if (pc.iceConnectionState === 'failed') {
+        console.error('WebRTC: ICE failed, check your network connectivity.');
       }
     });
 
@@ -99,6 +107,10 @@ export default function Home() {
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
 
   const startWebRTCStream = async (ip: string) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('navigator.mediaDevices is not supported.');
+      return;
+    }
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     setStreams((prev) => ({ ...prev, [ip]: stream }));
   };
@@ -106,7 +118,7 @@ export default function Home() {
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
     if (ip === 'local') {
-      startWebRTCStream(ip);
+      startWebRTCStream(ip).catch(error => console.error('Error accessing local camera:', error));
     } else {
       setStreams((prev) => {
         const newStreams = { ...prev, [ip]: `http://${ip}:8889/cam/whep` }; // Use WHEP endpoint
@@ -120,7 +132,7 @@ export default function Home() {
     console.log(`Stop stream button clicked for IP: ${ip}`);
     const stream = streams[ip];
     if (stream && typeof stream !== 'string') {
-      stream.getTracks().forEach((track) => track.stop());
+      (stream as MediaStream).getTracks().forEach((track) => track.stop());
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
     setDetecting((prev) => ({ ...prev, [ip]: false }));
