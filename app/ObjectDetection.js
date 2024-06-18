@@ -4,7 +4,7 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
 
-const ObjectDetection = ({ streamUrl }) => {
+const ObjectDetection = ({ stream }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [model, setModel] = useState(null);
@@ -18,16 +18,16 @@ const ObjectDetection = ({ streamUrl }) => {
 
     // Set up the video feed
     const video = videoRef.current;
-    if (streamUrl && typeof streamUrl === 'string') {
-      video.src = streamUrl;
-    } else if (streamUrl instanceof MediaStream) {
-      video.srcObject = streamUrl;
+    if (stream && typeof stream === 'string') {
+      video.src = stream;
+    } else if (stream instanceof MediaStream) {
+      video.srcObject = stream;
     }
 
     video.onloadedmetadata = () => {
       video.play();
     };
-  }, [streamUrl]);
+  }, [stream]);
 
   const detectFrame = useCallback((video, model) => {
     model.detect(video).then((predictions) => {
