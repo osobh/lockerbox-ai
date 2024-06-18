@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection'; // Import the ObjectDetection component
@@ -25,6 +25,77 @@ const FlatButton = styled(Button)({
     backgroundColor: '#f5f5f5',
   },
 });
+
+const WebRTCVideo = ({ ip }) => {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const retryPause = 2000;
+    const video = videoRef.current;
+    let pc = null;
+    let restartTimeout = null;
+    let sessionUrl = '';
+    let offerData = '';
+    let queuedCandidates = [];
+
+    const setMessage = (str) => {
+      console.log(str);
+    };
+
+    const loadStream = () => {
+      const offerOptions = {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      };
+      pc = new RTCPeerConnection();
+      pc.addEventListener('icecandidate', (event) => {
+        if (event.candidate) {
+          queuedCandidates.push(event.candidate);
+        }
+      });
+      pc.addEventListener('track', (event) => {
+        video.srcObject = event.streams[0];
+      });
+      pc.createOffer(offerOptions).then((offer) => {
+        return pc.setLocalDescription(offer);
+      }).then(() => {
+        const offer = pc.localDescription;
+        fetch(`http://${ip}:8889/cam/whep`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/sdp'
+          },
+          body: offer.sdp
+        }).then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.text();
+        }).then((answer) => {
+          const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
+          pc.setRemoteDescription(desc);
+        }).catch((error) => {
+          setMessage(`Error fetching or handling offer: ${error}`);
+        });
+      }).catch((error) => {
+        setMessage(`Error creating offer: ${error}`);
+      });
+    };
+
+    loadStream();
+  }, [ip]);
+
+  return (
+    <video
+      ref={videoRef}
+      width="640"
+      height="480"
+      autoPlay
+      muted
+      controls
+    />
+  );
+};
 
 export default function Home() {
   const [streams, setStreams] = useState<{ [key: string]: string | MediaStream | null }>({});
@@ -88,15 +159,7 @@ export default function Home() {
                       onLoadedData={() => console.log(`Loaded data for ${camera.ip}:`)}
                     />
                   ) : (
-                    <iframe
-                      src={streams[camera.ip] as string}
-                      width="640"
-                      height="480"
-                      frameBorder="0"
-                      allow="fullscreen"
-                      onLoad={() => console.log(`Stream loaded for IP: ${camera.ip}`)}
-                      onError={(e) => console.error(`Stream failed for IP: ${camera.ip}`, e)}
-                    />
+                    <WebRTCVideo ip={camera.ip} />
                   )}
                   {detecting[camera.ip] && (
                     <ObjectDetection streamUrl={streams[camera.ip]} />
