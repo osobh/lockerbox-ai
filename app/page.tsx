@@ -7,9 +7,7 @@ import ObjectDetection from './ObjectDetection'; // Import the ObjectDetection c
 
 const cameras = [
   { hostname: 'gitlab.lan', ip: '192.168.68.67', port: '8889', name: 'Gitlab' },
-  { hostname: 'rpi01.lan', ip: '192.168.68.82', port: '8889', name: 'Rpi01' },
   { hostname: 'rpi04.lan', ip: '192.168.68.76', port: '8889', name: 'Rpi04' },
-  { hostname: 'local', ip: 'local', port: '0', name: 'Local Camera' }, // Added local camera entry
 ];
 
 const placeholderImage = 'https://via.placeholder.com/640x480.png?text=Camera+Feed';
@@ -33,15 +31,23 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = () => {
-    const pc = new RTCPeerConnection();
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
     const offerOptions = {
       offerToReceiveAudio: true,
-      offerToReceiveVideo: true,
+      offerToReceiveVideo: true
     };
 
     pc.addEventListener('icecandidate', (event) => {
       if (event.candidate) {
         // Handle ICE candidate
+      }
+    });
+
+    pc.addEventListener('iceconnectionstatechange', () => {
+      if (pc.iceConnectionState === 'failed') {
+        console.error('WebRTC: ICE failed, check your network connectivity.');
       }
     });
 
@@ -52,29 +58,23 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
     });
 
     pc.createOffer(offerOptions)
-      .then((offer) => pc.setLocalDescription(offer))
+      .then(offer => pc.setLocalDescription(offer))
       .then(() => {
-        const offer = pc.localDescription;
-        if (offer && offer.sdp) {
+        if (pc.localDescription && pc.localDescription.sdp) {
           fetch(`http://${ip}:8889/cam/whep`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/sdp' },
-            body: offer.sdp,
+            body: pc.localDescription.sdp
           })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-              }
-              return response.text();
-            })
-            .then((answer) => {
+            .then(response => response.text())
+            .then(answer => {
               const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
               pc.setRemoteDescription(desc);
             })
-            .catch((error) => console.error('Error setting remote description:', error));
+            .catch(error => console.error('Error setting remote description:', error));
         }
       })
-      .catch((error) => console.error('Error creating offer:', error));
+      .catch(error => console.error('Error creating offer:', error));
   };
 
   useEffect(() => {
@@ -104,36 +104,13 @@ export default function Home() {
   const [streams, setStreams] = useState<{ [key: string]: string | MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
 
-  const startWebRTCStream = async (ip: string) => {
-    if (!navigator.mediaDevices) {
-      console.error('navigator.mediaDevices is not supported.');
-      return;
-    }
-
-    if (!navigator.mediaDevices.getUserMedia) {
-      console.error('navigator.mediaDevices.getUserMedia is not supported.');
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      setStreams((prev) => ({ ...prev, [ip]: stream }));
-    } catch (error) {
-      console.error('Error accessing local camera:', error);
-    }
-  };
-
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
-    if (ip === 'local') {
-      startWebRTCStream(ip);
-    } else {
-      setStreams((prev) => {
-        const newStreams = { ...prev, [ip]: `http://${ip}:8889/cam/whep` }; // Use WHEP endpoint
-        console.log(`Updated streams state:`, newStreams);
-        return newStreams;
-      });
-    }
+    setStreams((prev) => {
+      const newStreams = { ...prev, [ip]: `http://${ip}:8889/cam/whep` }; // Use WHEP endpoint
+      console.log(`Updated streams state:`, newStreams);
+      return newStreams;
+    });
   };
 
   const handleStopStream = (ip: string) => {
@@ -161,23 +138,7 @@ export default function Home() {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  {camera.ip === 'local' ? (
-                    <video
-                      ref={(ref) => {
-                        if (ref && streams[camera.ip] && typeof streams[camera.ip] !== 'string') {
-                          ref.srcObject = streams[camera.ip] as MediaStream;
-                          ref.play();
-                        }
-                      }}
-                      width="640"
-                      height="480"
-                      autoPlay
-                      muted
-                      onLoadedData={() => console.log(`Loaded data for ${camera.ip}:`)}
-                    />
-                  ) : (
-                    <WebRTCVideo ip={camera.ip} />
-                  )}
+                  <WebRTCVideo ip={camera.ip} />
                   {detecting[camera.ip] && (
                     <ObjectDetection streamUrl={streams[camera.ip]} />
                   )}
