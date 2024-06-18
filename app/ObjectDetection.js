@@ -1,5 +1,6 @@
 "use client";
 
+// ObjectDetection.js
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
@@ -10,16 +11,43 @@ const ObjectDetection = ({ streamUrl }) => {
   const [model, setModel] = useState(null);
 
   useEffect(() => {
-    // Load the COCO-SSD model
     cocoSsd.load().then((loadedModel) => {
       setModel(loadedModel);
       console.log("COCO-SSD model loaded.");
     });
 
-    // Set up the video feed
     const video = videoRef.current;
-    if (streamUrl && typeof streamUrl === 'string') {
-      video.src = streamUrl;
+
+    if (typeof streamUrl === 'string') {
+      const pc = new RTCPeerConnection();
+      const offerOptions = {
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: true
+      };
+
+      pc.addEventListener('icecandidate', (event) => {
+        if (event.candidate) {
+          // Handle ICE candidate
+        }
+      });
+
+      pc.addEventListener('track', (event) => {
+        video.srcObject = event.streams[0];
+      });
+
+      pc.createOffer(offerOptions)
+        .then(offer => pc.setLocalDescription(offer))
+        .then(() => {
+          fetch(streamUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/sdp' },
+            body: pc.localDescription.sdp
+          })
+            .then(response => response.text())
+            .then(answer => pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answer })))
+            .catch(error => console.error('Error setting remote description:', error));
+        })
+        .catch(error => console.error('Error creating offer:', error));
     } else if (streamUrl instanceof MediaStream) {
       video.srcObject = streamUrl;
     }
@@ -65,19 +93,14 @@ const ObjectDetection = ({ streamUrl }) => {
   }, [model, detectFrame]);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div>
       <video
         ref={videoRef}
         width="640"
         height="480"
-        style={{ display: "block" }}
+        style={{ display: "none" }}
       ></video>
-      <canvas
-        ref={canvasRef}
-        width="640"
-        height="480"
-        style={{ position: "absolute", top: 0, left: 0 }}
-      ></canvas>
+      <canvas ref={canvasRef} width="640" height="480"></canvas>
     </div>
   );
 };
