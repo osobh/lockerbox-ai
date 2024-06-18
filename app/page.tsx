@@ -25,7 +25,7 @@ const FlatButton = styled(Button)({
 
 interface WebRTCVideoProps {
   ip: string;
-  onLoaded: () => void;
+  onLoaded: (dimensions: { width: number; height: number }) => void;
 }
 
 const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
@@ -95,7 +95,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
           console.error('Video dimensions are invalid.');
         } else {
           console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
-          onLoaded();
+          onLoaded({ width: videoElement.videoWidth, height: videoElement.videoHeight });
         }
       }}
     />
@@ -105,7 +105,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
 export default function Home() {
   const [streams, setStreams] = useState<{ [key: string]: string | MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
-  const [videoLoaded, setVideoLoaded] = useState<{ [key: string]: boolean }>({});
+  const [videoLoaded, setVideoLoaded] = useState<{ [key: string]: { width: number; height: number } | null }>({});
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
@@ -124,15 +124,15 @@ export default function Home() {
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
     setDetecting((prev) => ({ ...prev, [ip]: false }));
-    setVideoLoaded((prev) => ({ ...prev, [ip]: false }));
+    setVideoLoaded((prev) => ({ ...prev, [ip]: null }));
   };
 
   const handleDetect = (ip: string) => {
     setDetecting((prev) => ({ ...prev, [ip]: true }));
   };
 
-  const handleVideoLoaded = (ip: string) => {
-    setVideoLoaded((prev) => ({ ...prev, [ip]: true }));
+  const handleVideoLoaded = (ip: string, dimensions: { width: number; height: number }) => {
+    setVideoLoaded((prev) => ({ ...prev, [ip]: dimensions }));
   };
 
   return (
@@ -146,7 +146,7 @@ export default function Home() {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} onLoaded={() => handleVideoLoaded(camera.ip)} />
+                  <WebRTCVideo ip={camera.ip} onLoaded={(dimensions) => handleVideoLoaded(camera.ip, dimensions)} />
                   {videoLoaded[camera.ip] && detecting[camera.ip] && (
                     <ObjectDetection streamUrl={streams[camera.ip]} />
                   )}
