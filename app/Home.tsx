@@ -27,6 +27,7 @@ const FlatButton = styled(Button)({
 const Home: React.FC = () => {
   const [streams, setStreams] = useState<{ [key: string]: MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
+  const [startStream, setStartStream] = useState<{ [key: string]: boolean }>({});
 
   const handleStreamReady = (ip: string, stream: MediaStream) => {
     console.log(`Stream ready for IP: ${ip}`, stream);
@@ -35,7 +36,7 @@ const Home: React.FC = () => {
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
-    // Implement stream starting logic here if needed
+    setStartStream((prev) => ({ ...prev, [ip]: true }));
   };
 
   const handleStopStream = (ip: string) => {
@@ -45,6 +46,7 @@ const Home: React.FC = () => {
       stream.getTracks().forEach((track) => track.stop());
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
+    setStartStream((prev) => ({ ...prev, [ip]: false }));
   };
 
   const handleDetect = (ip: string) => {
@@ -68,7 +70,7 @@ const Home: React.FC = () => {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} />
+                  <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} startStream={startStream[camera.ip]} />
                   <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
                 </div>
               ) : (
