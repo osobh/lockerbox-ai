@@ -3,7 +3,7 @@ import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import '@tensorflow/tfjs';
 
 interface ObjectDetectionProps {
-  streamUrl: string | MediaStream | null;
+  streamUrl: MediaStream | null;
   isActive: boolean;
 }
 
@@ -13,7 +13,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
 
   useEffect(() => {
     const loadModelAndDetect = async () => {
-      if (!isActive || !videoRef.current || !canvasRef.current) return;
+      if (!isActive || !videoRef.current || !canvasRef.current || !streamUrl) return;
 
       console.log('Initializing object detection...');
       const model = await cocoSsd.load();
@@ -23,6 +23,8 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
+      video.srcObject = streamUrl;
+      console.log('Setting video source as MediaStream:', streamUrl);
       video.onloadeddata = async () => {
         console.log('Video loaded data.');
         canvas.width = video.videoWidth;
@@ -57,17 +59,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         detectFrame();
       };
 
-      if (typeof streamUrl === 'string') {
-        video.src = streamUrl;
-        console.log('Setting video source as URL:', streamUrl);
-        video.play().catch(error => console.error('Error playing video:', error));
-      } else if (streamUrl instanceof MediaStream) {
-        video.srcObject = streamUrl;
-        console.log('Setting video source as MediaStream:', streamUrl);
-        video.play().catch(error => console.error('Error playing video:', error));
-      } else {
-        console.error('Invalid stream URL or MediaStream:', streamUrl);
-      }
+      video.play().catch(error => console.error('Error playing video:', error));
     };
 
     if (isActive) {

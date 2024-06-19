@@ -25,9 +25,10 @@ const FlatButton = styled(Button)({
 
 interface WebRTCVideoProps {
   ip: string;
+  onStreamReady: (stream: MediaStream) => void;
 }
 
-const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
+const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = useCallback(() => {
@@ -57,6 +58,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
       if (videoRef.current) {
         console.log('Track event:', event.streams);
         videoRef.current.srcObject = event.streams[0];
+        onStreamReady(event.streams[0]);
       }
     });
 
@@ -82,7 +84,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
         return pc.setRemoteDescription(desc);
       })
       .catch(error => console.error('Error creating or setting offer:', error));
-  }, [ip]);
+  }, [ip, onStreamReady]);
 
   useEffect(() => {
     loadStream();
@@ -110,27 +112,21 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
 };
 
 export default function Home() {
-  const [streams, setStreams] = useState<{ [key: string]: string | MediaStream | null }>({});
+  const [streams, setStreams] = useState<{ [key: string]: MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
-    const streamUrl = `http://${ip}:8889/cam/whep`;
-    console.log(`Stream URL: ${streamUrl}`);
-    setStreams((prev) => {
-      const newStreams = { ...prev, [ip]: streamUrl }; // Use WHEP endpoint
-      console.log(`Updated streams state:`, newStreams);
-      return newStreams;
-    });
   };
 
   const handleStopStream = (ip: string) => {
     console.log(`Stop stream button clicked for IP: ${ip}`);
     const stream = streams[ip];
-    if (stream && typeof stream !== 'string') {
-      (stream as MediaStream).getTracks().forEach((track) => track.stop());
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
+    setDetecting((prev) => ({ ...prev, [ip]: false }));
   };
 
   const handleDetect = (ip: string) => {
@@ -141,6 +137,11 @@ export default function Home() {
   const handleStopDetect = (ip: string) => {
     console.log(`Stop detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: false }));
+  };
+
+  const handleStreamReady = (ip: string, stream: MediaStream) => {
+    console.log(`Stream ready for IP: ${ip}`);
+    setStreams((prev) => ({ ...prev, [ip]: stream }));
   };
 
   return (
@@ -154,7 +155,7 @@ export default function Home() {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} />
+                  <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} />
                   <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
                 </div>
               ) : (
