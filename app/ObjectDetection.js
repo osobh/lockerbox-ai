@@ -12,10 +12,6 @@ const ObjectDetection = ({ streamUrl, isActive }) => {
     const detectObjects = async () => {
       if (canvasRef.current && videoElement) {
         const context = canvasRef.current.getContext('2d');
-        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-          console.error('Video dimensions are invalid.');
-          return;
-        }
         canvasRef.current.width = videoElement.videoWidth;
         canvasRef.current.height = videoElement.videoHeight;
         context.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
@@ -38,11 +34,24 @@ const ObjectDetection = ({ streamUrl, isActive }) => {
     };
 
     const initializeDetection = async () => {
-      model = await cocoSsd.load();
-      videoElement = document.createElement('video');
-      videoElement.srcObject = await navigator.mediaDevices.getUserMedia({ video: { deviceId: streamUrl } });
-      videoElement.play();
-      detectObjects();
+      console.log('Initializing object detection...');
+      try {
+        model = await cocoSsd.load();
+        console.log('Model loaded successfully.');
+        videoElement = document.createElement('video');
+        if (streamUrl.startsWith('local')) {
+          videoElement.srcObject = await navigator.mediaDevices.getUserMedia({ video: true });
+        } else {
+          videoElement.src = streamUrl;
+        }
+        videoElement.onloadeddata = () => {
+          console.log('Video element loaded data:', videoElement.videoWidth, videoElement.videoHeight);
+          detectObjects();
+        };
+        videoElement.play();
+      } catch (error) {
+        console.error('Error initializing object detection:', error);
+      }
     };
 
     if (isActive) {

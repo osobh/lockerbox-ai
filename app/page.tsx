@@ -23,14 +23,15 @@ const FlatButton = styled(Button)({
   },
 });
 
-interface WebRTCVideoProps {
+type WebRTCVideoProps = {
   ip: string;
-}
+};
 
 const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = () => {
+    console.log(`Starting WebRTC stream for IP: ${ip}`);
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
@@ -41,11 +42,12 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
 
     pc.addEventListener('icecandidate', (event) => {
       if (event.candidate) {
-        // Handle ICE candidate
+        console.log('ICE candidate:', event.candidate);
       }
     });
 
     pc.addEventListener('iceconnectionstatechange', () => {
+      console.log('ICE connection state:', pc.iceConnectionState);
       if (pc.iceConnectionState === 'failed') {
         console.error('WebRTC: ICE failed, check your network connectivity.');
       }
@@ -53,28 +55,33 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
 
     pc.addEventListener('track', (event) => {
       if (videoRef.current) {
+        console.log('Track event:', event.streams);
         videoRef.current.srcObject = event.streams[0];
       }
     });
 
     pc.createOffer(offerOptions)
-      .then(offer => pc.setLocalDescription(offer))
+      .then(offer => {
+        console.log('Created offer:', offer);
+        return pc.setLocalDescription(offer);
+      })
       .then(() => {
         if (pc.localDescription && pc.localDescription.sdp) {
-          fetch(`http://${ip}:8889/cam/whep`, {
+          console.log('Local description set:', pc.localDescription.sdp);
+          return fetch(`http://${ip}:8889/cam/whep`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/sdp' },
             body: pc.localDescription.sdp
-          })
-            .then(response => response.text())
-            .then(answer => {
-              const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
-              pc.setRemoteDescription(desc);
-            })
-            .catch(error => console.error('Error setting remote description:', error));
+          });
         }
       })
-      .catch(error => console.error('Error creating offer:', error));
+      .then(response => response!.text())
+      .then(answer => {
+        console.log('Received answer:', answer);
+        const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
+        return pc.setRemoteDescription(desc);
+      })
+      .catch(error => console.error('Error creating or setting offer:', error));
   };
 
   useEffect(() => {
