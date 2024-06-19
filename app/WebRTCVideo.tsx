@@ -11,7 +11,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStrea
 
   const loadStream = useCallback(() => {
     if (!startStream) return;
-
+    
     console.log(`Starting WebRTC stream for IP: ${ip}`);
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -74,6 +74,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStrea
   return (
     <video
       ref={videoRef}
+      autoPlay
       muted
       style={{ width: '100%', height: 'auto' }}
       onLoadedData={(event) => {
