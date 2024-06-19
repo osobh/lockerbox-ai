@@ -3,12 +3,15 @@ import React, { useRef, useCallback, useEffect } from 'react';
 interface WebRTCVideoProps {
   ip: string;
   onStreamReady: (stream: MediaStream) => void;
+  startStream: boolean;
 }
 
-const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady }) => {
+const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStream }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = useCallback(() => {
+    if (!startStream) return;
+
     console.log(`Starting WebRTC stream for IP: ${ip}`);
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -62,7 +65,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady }) => {
         return pc.setRemoteDescription(desc);
       })
       .catch(error => console.error('Error creating or setting offer:', error));
-  }, [ip]);
+  }, [ip, startStream]);
 
   useEffect(() => {
     loadStream();
@@ -71,7 +74,6 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady }) => {
   return (
     <video
       ref={videoRef}
-      autoPlay
       muted
       style={{ width: '100%', height: 'auto' }}
       onLoadedData={(event) => {

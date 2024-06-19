@@ -33,6 +33,20 @@ const Home: React.FC = () => {
     setStreams((prev) => ({ ...prev, [ip]: stream }));
   };
 
+  const handleStartStream = (ip: string) => {
+    console.log(`Start stream button clicked for IP: ${ip}`);
+    // Implement stream starting logic here if needed
+  };
+
+  const handleStopStream = (ip: string) => {
+    console.log(`Stop stream button clicked for IP: ${ip}`);
+    const stream = streams[ip];
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    setStreams((prev) => ({ ...prev, [ip]: null }));
+  };
+
   const handleDetect = (ip: string) => {
     console.log(`Detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: true }));
@@ -41,12 +55,6 @@ const Home: React.FC = () => {
   const handleStopDetect = (ip: string) => {
     console.log(`Stop detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: false }));
-  };
-
-  const handleStartStream = (ip: string) => {
-    console.log(`Start stream button clicked for IP: ${ip}`);
-    // No need to set stream URL directly here since WebRTC will handle it
-    setStreams((prev) => ({ ...prev, [ip]: null }));
   };
 
   return (
@@ -58,7 +66,7 @@ const Home: React.FC = () => {
         {cameras.map((camera) => (
           <Grid item key={camera.ip} xs={12} md={6}>
             <Card>
-              {streams[camera.ip] !== null ? (
+              {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
                   <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} />
                   <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
@@ -81,9 +89,9 @@ const Home: React.FC = () => {
                 </Typography>
               </CardContent>
               <CardActions>
-                {streams[camera.ip] !== null ? (
+                {streams[camera.ip] ? (
                   <>
-                    <FlatButton color="primary" onClick={() => setStreams((prev) => ({ ...prev, [camera.ip]: null }))}>
+                    <FlatButton color="primary" onClick={() => handleStopStream(camera.ip)}>
                       Stop Stream
                     </FlatButton>
                     {!detecting[camera.ip] ? (
