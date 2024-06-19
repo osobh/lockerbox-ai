@@ -1,78 +1,63 @@
 import React, { useEffect, useRef } from 'react';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs';
 
-const ObjectDetection = ({ streamUrl, width, height, isActive }) => {
+const ObjectDetection = ({ streamUrl, isActive }) => {
   const canvasRef = useRef(null);
-  const videoRef = useRef(null);
 
   useEffect(() => {
-    const loadModel = async () => {
-      const model = await cocoSsd.load();
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
+    let videoElement;
+    let model;
 
-      const detectFrame = async () => {
-        if (!isActive) return;
-        if (video.videoWidth === 0 || video.videoHeight === 0) {
+    const detectObjects = async () => {
+      if (canvasRef.current && videoElement) {
+        const context = canvasRef.current.getContext('2d');
+        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
           console.error('Video dimensions are invalid.');
           return;
         }
-        const predictions = await model.detect(video);
-        ctx.clearRect(0, 0, width, height);
+        canvasRef.current.width = videoElement.videoWidth;
+        canvasRef.current.height = videoElement.videoHeight;
+        context.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
+        const predictions = await model.detect(canvasRef.current);
         predictions.forEach(prediction => {
-          ctx.beginPath();
-          ctx.rect(...prediction.bbox);
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = 'green';
-          ctx.fillStyle = 'green';
-          ctx.stroke();
-          ctx.fillText(
-            `${prediction.class} (${(prediction.score * 100).toFixed(2)}%)`,
+          context.beginPath();
+          context.rect(...prediction.bbox);
+          context.lineWidth = 2;
+          context.strokeStyle = 'red';
+          context.fillStyle = 'red';
+          context.stroke();
+          context.fillText(
+            `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
             prediction.bbox[0],
             prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10
           );
         });
-        requestAnimationFrame(detectFrame);
-      };
-
-      detectFrame();
+        requestAnimationFrame(detectObjects);
+      }
     };
 
-    loadModel();
-  }, [streamUrl, width, height, isActive]);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    const handleLoadedData = () => {
-      console.log(`Video loaded for ${streamUrl} with dimensions: ${video.videoWidth}x${video.videoHeight}`);
+    const initializeDetection = async () => {
+      model = await cocoSsd.load();
+      videoElement = document.createElement('video');
+      videoElement.srcObject = await navigator.mediaDevices.getUserMedia({ video: { deviceId: streamUrl } });
+      videoElement.play();
+      detectObjects();
     };
-    video.addEventListener('loadeddata', handleLoadedData);
+
+    if (isActive) {
+      initializeDetection();
+    }
+
     return () => {
-      video.removeEventListener('loadeddata', handleLoadedData);
+      if (videoElement) {
+        videoElement.pause();
+        videoElement.srcObject = null;
+      }
     };
-  }, [streamUrl]);
+  }, [streamUrl, isActive]);
 
-  return (
-    <div style={{ position: 'absolute', top: 0, left: 0 }}>
-      <video
-        ref={videoRef}
-        src={streamUrl}
-        width={width}
-        height={height}
-        autoPlay
-        muted
-        style={{ display: 'none' }}
-      />
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
-      />
-    </div>
-  );
+  return <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />;
 };
 
 export default ObjectDetection;

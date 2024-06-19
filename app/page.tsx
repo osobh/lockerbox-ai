@@ -30,7 +30,7 @@ interface WebRTCVideoProps {
 const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const loadStream = useCallback(() => {
+  const loadStream = () => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
@@ -41,7 +41,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
 
     pc.addEventListener('icecandidate', (event) => {
       if (event.candidate) {
-        console.log('ICE candidate:', event.candidate);
+        // Handle ICE candidate
       }
     });
 
@@ -54,7 +54,6 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
     pc.addEventListener('track', (event) => {
       if (videoRef.current) {
         videoRef.current.srcObject = event.streams[0];
-        console.log('Stream added to video element');
       }
     });
 
@@ -71,28 +70,30 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
             .then(answer => {
               const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
               pc.setRemoteDescription(desc);
-              console.log('Remote description set:', desc);
             })
             .catch(error => console.error('Error setting remote description:', error));
         }
       })
       .catch(error => console.error('Error creating offer:', error));
-  }, []);
+  };
 
   useEffect(() => {
     loadStream();
-  }, [loadStream]);
+  }, [ip]);
 
   return (
     <video
       ref={videoRef}
-      width="640"
-      height="480"
       autoPlay
       muted
+      style={{ width: '100%', height: 'auto' }}
       onLoadedData={(event) => {
         const videoElement = event.currentTarget;
-        console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+          console.error('Video dimensions are invalid.');
+        } else {
+          console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
+        }
       }}
     />
   );
@@ -142,7 +143,7 @@ export default function Home() {
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
                   <WebRTCVideo ip={camera.ip} />
-                  <ObjectDetection streamUrl={streams[camera.ip]} width={640} height={480} isActive={detecting[camera.ip]} />
+                  <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
                 </div>
               ) : (
                 <CardMedia
