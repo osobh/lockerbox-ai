@@ -28,20 +28,6 @@ const Home: React.FC = () => {
   const [streams, setStreams] = useState<{ [key: string]: MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
 
-  const handleStartStream = (ip: string) => {
-    console.log(`Start stream button clicked for IP: ${ip}`);
-    // No need to set stream URL directly here since WebRTC will handle it
-  };
-
-  const handleStopStream = (ip: string) => {
-    console.log(`Stop stream button clicked for IP: ${ip}`);
-    const stream = streams[ip];
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
-    setStreams((prev) => ({ ...prev, [ip]: null }));
-  };
-
   const handleStreamReady = (ip: string, stream: MediaStream) => {
     console.log(`Stream ready for IP: ${ip}`, stream);
     setStreams((prev) => ({ ...prev, [ip]: stream }));
@@ -91,7 +77,7 @@ const Home: React.FC = () => {
               <CardActions>
                 {streams[camera.ip] ? (
                   <>
-                    <FlatButton color="primary" onClick={() => handleStopStream(camera.ip)}>
+                    <FlatButton color="primary" onClick={() => setStreams((prev) => ({ ...prev, [camera.ip]: null }))}>
                       Stop Stream
                     </FlatButton>
                     {!detecting[camera.ip] ? (
@@ -105,7 +91,7 @@ const Home: React.FC = () => {
                     )}
                   </>
                 ) : (
-                  <FlatButton color="primary" onClick={() => handleStartStream(camera.ip)}>
+                  <FlatButton color="primary" onClick={() => handleStreamReady(camera.ip, null)}>
                     Start Stream
                   </FlatButton>
                 )}
