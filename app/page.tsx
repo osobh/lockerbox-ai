@@ -75,7 +75,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
           });
         }
       })
-      .then(response => response.text())
+      .then(response => response!.text())
       .then(answer => {
         console.log('Received answer:', answer);
         const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
