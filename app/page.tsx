@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection'; // Import the ObjectDetection component
@@ -23,9 +23,9 @@ const FlatButton = styled(Button)({
   },
 });
 
-type WebRTCVideoProps = {
+interface WebRTCVideoProps {
   ip: string;
-};
+}
 
 const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -75,7 +75,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
           });
         }
       })
-      .then(response => response!.text())
+      .then(response => response.text())
       .then(answer => {
         console.log('Received answer:', answer);
         const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
@@ -101,6 +101,9 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
         } else {
           console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
         }
+      }}
+      onError={(error) => {
+        console.error('Video element error:', error);
       }}
     />
   );

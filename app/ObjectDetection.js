@@ -4,17 +4,17 @@ import * as tf from '@tensorflow/tfjs';
 
 const ObjectDetection = ({ streamUrl, isActive }) => {
   const canvasRef = useRef(null);
+  const videoRef = useRef(null);
 
   useEffect(() => {
-    let videoElement;
     let model;
 
     const detectObjects = async () => {
-      if (canvasRef.current && videoElement) {
+      if (canvasRef.current && videoRef.current) {
         const context = canvasRef.current.getContext('2d');
-        canvasRef.current.width = videoElement.videoWidth;
-        canvasRef.current.height = videoElement.videoHeight;
-        context.drawImage(videoElement, 0, 0, videoElement.videoWidth, videoElement.videoHeight);
+        canvasRef.current.width = videoRef.current.videoWidth;
+        canvasRef.current.height = videoRef.current.videoHeight;
+        context.drawImage(videoRef.current, 0, 0, videoRef.current.videoWidth, videoRef.current.videoHeight);
         const predictions = await model.detect(canvasRef.current);
         predictions.forEach(prediction => {
           context.beginPath();
@@ -38,17 +38,22 @@ const ObjectDetection = ({ streamUrl, isActive }) => {
       try {
         model = await cocoSsd.load();
         console.log('Model loaded successfully.');
-        videoElement = document.createElement('video');
         if (streamUrl.startsWith('local')) {
-          videoElement.srcObject = await navigator.mediaDevices.getUserMedia({ video: true });
+          console.log('Setting up local video stream.');
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoRef.current.srcObject = stream;
         } else {
-          videoElement.src = streamUrl;
+          console.log(`Setting up remote video stream from URL: ${streamUrl}`);
+          videoRef.current.src = streamUrl;
         }
-        videoElement.onloadeddata = () => {
-          console.log('Video element loaded data:', videoElement.videoWidth, videoElement.videoHeight);
+        videoRef.current.onloadeddata = () => {
+          console.log('Video element loaded data:', videoRef.current.videoWidth, videoRef.current.videoHeight);
           detectObjects();
         };
-        videoElement.play();
+        videoRef.current.onerror = (error) => {
+          console.error('Error loading video element:', error);
+        };
+        videoRef.current.play();
       } catch (error) {
         console.error('Error initializing object detection:', error);
       }
@@ -59,14 +64,19 @@ const ObjectDetection = ({ streamUrl, isActive }) => {
     }
 
     return () => {
-      if (videoElement) {
-        videoElement.pause();
-        videoElement.srcObject = null;
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
       }
     };
   }, [streamUrl, isActive]);
 
-  return <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />;
+  return (
+    <>
+      <video ref={videoRef} style={{ display: 'none' }} />
+      <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0 }} />
+    </>
+  );
 };
 
 export default ObjectDetection;
