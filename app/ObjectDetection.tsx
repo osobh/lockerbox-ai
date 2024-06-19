@@ -29,26 +29,26 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         canvas.height = video.videoHeight;
 
         const detectFrame = async () => {
-          if (!isActive) return;
+          if (!isActive || !context) return;
 
-          context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+          context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           const predictions = await model.detect(video);
-          context?.clearRect(0, 0, canvas.width, canvas.height);
-          context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           predictions.forEach((prediction) => {
-            context?.beginPath();
-            context?.rect(...prediction.bbox);
-            context?.lineWidth = 2;
-            context?.strokeStyle = 'red';
-            context?.fillStyle = 'red';
-            context?.stroke();
-            context?.fillText(
+            context.beginPath();
+            context.rect(...prediction.bbox);
+            context.lineWidth = 2;
+            context.strokeStyle = 'red';
+            context.fillStyle = 'red';
+            context.stroke();
+            context.fillText(
               `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
               prediction.bbox[0],
               prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10
             );
-            context?.closePath();
+            context.closePath();
           });
 
           requestAnimationFrame(detectFrame);
