@@ -59,14 +59,15 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
 
       if (typeof streamUrl === 'string') {
         video.src = streamUrl;
+        console.log('Setting video source as URL:', streamUrl);
+        video.play().catch(error => console.error('Error playing video:', error));
       } else if (streamUrl instanceof MediaStream) {
         video.srcObject = streamUrl;
+        console.log('Setting video source as MediaStream:', streamUrl);
+        video.play().catch(error => console.error('Error playing video:', error));
       } else {
         console.error('Invalid stream URL or MediaStream:', streamUrl);
-        return;
       }
-
-      video.play().catch(error => console.error('Error playing video:', error));
     };
 
     if (isActive) {

@@ -115,8 +115,10 @@ export default function Home() {
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
+    const streamUrl = `http://${ip}:8889/cam/whep`;
+    console.log(`Stream URL: ${streamUrl}`);
     setStreams((prev) => {
-      const newStreams = { ...prev, [ip]: `http://${ip}:8889/cam/whep` }; // Use WHEP endpoint
+      const newStreams = { ...prev, [ip]: streamUrl }; // Use WHEP endpoint
       console.log(`Updated streams state:`, newStreams);
       return newStreams;
     });
