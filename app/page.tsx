@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
-import ObjectDetection from './ObjectDetection'; // Import the ObjectDetection component
+import ObjectDetection from './ObjectDetection';
 
 const cameras = [
   { hostname: 'gitlab.lan', ip: '192.168.68.67', port: '8889', name: 'Gitlab' },
@@ -102,8 +102,8 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
           console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
         }
       }}
-      onError={(error) => {
-        console.error('Video element error:', error);
+      onError={(event) => {
+        console.error('Error loading video element:', event);
       }}
     />
   );
