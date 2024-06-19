@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
-import ObjectDetection from './ObjectDetection';
+
 
 const cameras = [
   { hostname: 'gitlab.lan', ip: '192.168.68.67', port: '8889', name: 'Gitlab' },
@@ -151,10 +151,7 @@ export default function Home() {
           <Grid item key={camera.ip} xs={12} md={6}>
             <Card>
               {streams[camera.ip] ? (
-                <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} />
-                  <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
-                </div>
+                <div style={{ position: 'relative' }}></div>
               ) : (
                 <CardMedia
                   component="img"
