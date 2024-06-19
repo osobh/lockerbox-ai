@@ -75,8 +75,9 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
     }
 
     return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
+      const videoElement = videoRef.current;
+      if (videoElement) {
+        videoElement.pause();
       }
     };
   }, [isActive, streamUrl]);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection';
@@ -30,7 +30,7 @@ interface WebRTCVideoProps {
 const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const loadStream = () => {
+  const loadStream = useCallback(() => {
     console.log(`Starting WebRTC stream for IP: ${ip}`);
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -82,11 +82,11 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
         return pc.setRemoteDescription(desc);
       })
       .catch(error => console.error('Error creating or setting offer:', error));
-  };
+  }, [ip]);
 
   useEffect(() => {
     loadStream();
-  }, [ip]);
+  }, [loadStream]);
 
   return (
     <video
