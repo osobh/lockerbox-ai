@@ -148,7 +148,7 @@ export default function Home() {
                 <div style={{ position: 'relative' }}>
                   <WebRTCVideo ip={camera.ip} onLoaded={(dimensions) => handleVideoLoaded(camera.ip, dimensions)} />
                   {videoLoaded[camera.ip] && detecting[camera.ip] && (
-                    <ObjectDetection streamUrl={streams[camera.ip]} />
+                    <ObjectDetection streamUrl={streams[camera.ip]} width={640} height={480} />
                   )}
                 </div>
               ) : (
