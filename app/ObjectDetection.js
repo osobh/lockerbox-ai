@@ -15,6 +15,10 @@ const ObjectDetection = ({ streamUrl, width, height, isActive }) => {
 
       const detectFrame = async () => {
         if (!isActive) return;
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+          console.error('Video dimensions are invalid.');
+          return;
+        }
         const predictions = await model.detect(video);
         ctx.clearRect(0, 0, width, height);
         predictions.forEach(prediction => {
@@ -39,6 +43,17 @@ const ObjectDetection = ({ streamUrl, width, height, isActive }) => {
     loadModel();
   }, [streamUrl, width, height, isActive]);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    const handleLoadedData = () => {
+      console.log(`Video loaded for ${streamUrl} with dimensions: ${video.videoWidth}x${video.videoHeight}`);
+    };
+    video.addEventListener('loadeddata', handleLoadedData);
+    return () => {
+      video.removeEventListener('loadeddata', handleLoadedData);
+    };
+  }, [streamUrl]);
+
   return (
     <div style={{ position: 'absolute', top: 0, left: 0 }}>
       <video
@@ -49,9 +64,6 @@ const ObjectDetection = ({ streamUrl, width, height, isActive }) => {
         autoPlay
         muted
         style={{ display: 'none' }}
-        onLoadedData={(event) => {
-          console.log(`Video loaded for ${streamUrl} with dimensions: ${event.currentTarget.videoWidth}x${event.currentTarget.videoHeight}`);
-        }}
       />
       <canvas
         ref={canvasRef}

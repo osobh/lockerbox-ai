@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection'; // Import the ObjectDetection component
@@ -30,7 +30,7 @@ interface WebRTCVideoProps {
 const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const loadStream = () => {
+  const loadStream = useCallback(() => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
@@ -77,11 +77,11 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
         }
       })
       .catch(error => console.error('Error creating offer:', error));
-  };
+  }, []);
 
   useEffect(() => {
     loadStream();
-  }, [ip]);
+  }, [loadStream]);
 
   return (
     <video
@@ -121,10 +121,12 @@ export default function Home() {
   };
 
   const handleDetect = (ip: string) => {
+    console.log(`Detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: true }));
   };
 
   const handleStopDetect = (ip: string) => {
+    console.log(`Stop detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: false }));
   };
 
