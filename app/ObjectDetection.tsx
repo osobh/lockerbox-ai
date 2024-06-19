@@ -37,20 +37,18 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
           context?.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           predictions.forEach((prediction) => {
-            if (context) {
-              context.beginPath();
-              context.rect(...prediction.bbox);
-              context.lineWidth = 2;
-              context.strokeStyle = 'red';
-              context.fillStyle = 'red';
-              context.stroke();
-              context.fillText(
-                `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
-                prediction.bbox[0],
-                prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10
-              );
-              context.closePath();
-            }
+            context?.beginPath();
+            context?.rect(...prediction.bbox);
+            context?.lineWidth = 2;
+            context?.strokeStyle = 'red';
+            context?.fillStyle = 'red';
+            context?.stroke();
+            context?.fillText(
+              `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
+              prediction.bbox[0],
+              prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10
+            );
+            context?.closePath();
           });
 
           requestAnimationFrame(detectFrame);
@@ -61,10 +59,13 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
 
       if (typeof streamUrl === 'string') {
         video.src = streamUrl;
+        video.play().catch(error => console.error('Error playing video:', error));
       } else if (streamUrl instanceof MediaStream) {
         video.srcObject = streamUrl;
+        video.play().catch(error => console.error('Error playing video:', error));
+      } else {
+        console.error('Invalid stream URL or MediaStream:', streamUrl);
       }
-      video.play().catch(error => console.error('Error playing video:', error));
     };
 
     if (isActive) {

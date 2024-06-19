@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
-import ObjectDetection from './ObjectDetection';
+import ObjectDetection from './ObjectDetection'; // Import the ObjectDetection component
 
 const cameras = [
   { hostname: 'gitlab.lan', ip: '192.168.68.67', port: '8889', name: 'Gitlab' },
@@ -129,16 +129,11 @@ export default function Home() {
       (stream as MediaStream).getTracks().forEach((track) => track.stop());
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
+    setDetecting((prev) => ({ ...prev, [ip]: false }));
   };
 
   const handleDetect = (ip: string) => {
-    console.log(`Detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: true }));
-  };
-
-  const handleStopDetect = (ip: string) => {
-    console.log(`Stop detect button clicked for IP: ${ip}`);
-    setDetecting((prev) => ({ ...prev, [ip]: false }));
   };
 
   return (
@@ -152,8 +147,7 @@ export default function Home() {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} />
-                  <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
+                  <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip] || false} />
                 </div>
               ) : (
                 <CardMedia
@@ -183,7 +177,7 @@ export default function Home() {
                         Detect
                       </FlatButton>
                     ) : (
-                      <FlatButton color="secondary" onClick={() => handleStopDetect(camera.ip)}>
+                      <FlatButton color="secondary" onClick={() => handleStopStream(camera.ip)}>
                         Stop Detection
                       </FlatButton>
                     )}
