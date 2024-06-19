@@ -29,26 +29,28 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         canvas.height = video.videoHeight;
 
         const detectFrame = async () => {
-          if (!isActive || !context) return;
+          if (!isActive) return;
 
-          context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+          context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           const predictions = await model.detect(video);
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          context?.clearRect(0, 0, canvas.width, canvas.height);
+          context?.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           predictions.forEach((prediction) => {
-            context.beginPath();
-            context.rect(...prediction.bbox);
-            context.lineWidth = 2;
-            context.strokeStyle = 'red';
-            context.fillStyle = 'red';
-            context.stroke();
-            context.fillText(
-              `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
-              prediction.bbox[0],
-              prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10
-            );
-            context.closePath();
+            if (context) {
+              context.beginPath();
+              context.rect(...prediction.bbox);
+              context.lineWidth = 2;
+              context.strokeStyle = 'red';
+              context.fillStyle = 'red';
+              context.stroke();
+              context.fillText(
+                `${prediction.class} (${Math.round(prediction.score * 100)}%)`,
+                prediction.bbox[0],
+                prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10
+              );
+              context.closePath();
+            }
           });
 
           requestAnimationFrame(detectFrame);
@@ -59,13 +61,10 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
 
       if (typeof streamUrl === 'string') {
         video.src = streamUrl;
-        video.play().catch(error => console.error('Error playing video:', error));
       } else if (streamUrl instanceof MediaStream) {
         video.srcObject = streamUrl;
-        video.play().catch(error => console.error('Error playing video:', error));
-      } else {
-        console.error('Invalid stream URL or MediaStream:', streamUrl);
       }
+      video.play().catch(error => console.error('Error playing video:', error));
     };
 
     if (isActive) {
@@ -73,8 +72,10 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
     }
 
     return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
+      const videoElement = videoRef.current;
+
+      if (videoElement) {
+        videoElement.pause();
       }
     };
   }, [isActive, streamUrl]);
