@@ -25,10 +25,9 @@ const FlatButton = styled(Button)({
 
 interface WebRTCVideoProps {
   ip: string;
-  onLoaded: (dimensions: { width: number; height: number }) => void;
 }
 
-const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
+const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const loadStream = () => {
@@ -42,7 +41,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
 
     pc.addEventListener('icecandidate', (event) => {
       if (event.candidate) {
-        // Handle ICE candidate
+        console.log('ICE candidate:', event.candidate);
       }
     });
 
@@ -55,6 +54,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
     pc.addEventListener('track', (event) => {
       if (videoRef.current) {
         videoRef.current.srcObject = event.streams[0];
+        console.log('Stream added to video element');
       }
     });
 
@@ -71,6 +71,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
             .then(answer => {
               const desc = new RTCSessionDescription({ type: 'answer', sdp: answer });
               pc.setRemoteDescription(desc);
+              console.log('Remote description set:', desc);
             })
             .catch(error => console.error('Error setting remote description:', error));
         }
@@ -91,12 +92,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
       muted
       onLoadedData={(event) => {
         const videoElement = event.currentTarget;
-        if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
-          console.error('Video dimensions are invalid.');
-        } else {
-          console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
-          onLoaded({ width: videoElement.videoWidth, height: videoElement.videoHeight });
-        }
+        console.log(`Loaded data for ${ip}: ${videoElement.videoWidth}x${videoElement.videoHeight}`);
       }}
     />
   );
@@ -105,7 +101,6 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onLoaded }) => {
 export default function Home() {
   const [streams, setStreams] = useState<{ [key: string]: string | MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
-  const [videoLoaded, setVideoLoaded] = useState<{ [key: string]: { width: number; height: number } | null }>({});
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
@@ -123,16 +118,14 @@ export default function Home() {
       (stream as MediaStream).getTracks().forEach((track) => track.stop());
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
-    setDetecting((prev) => ({ ...prev, [ip]: false }));
-    setVideoLoaded((prev) => ({ ...prev, [ip]: null }));
   };
 
   const handleDetect = (ip: string) => {
     setDetecting((prev) => ({ ...prev, [ip]: true }));
   };
 
-  const handleVideoLoaded = (ip: string, dimensions: { width: number; height: number }) => {
-    setVideoLoaded((prev) => ({ ...prev, [ip]: dimensions }));
+  const handleStopDetect = (ip: string) => {
+    setDetecting((prev) => ({ ...prev, [ip]: false }));
   };
 
   return (
@@ -146,10 +139,8 @@ export default function Home() {
             <Card>
               {streams[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} onLoaded={(dimensions) => handleVideoLoaded(camera.ip, dimensions)} />
-                  {videoLoaded[camera.ip] && detecting[camera.ip] && (
-                    <ObjectDetection streamUrl={streams[camera.ip]} width={640} height={480} />
-                  )}
+                  <WebRTCVideo ip={camera.ip} />
+                  <ObjectDetection streamUrl={streams[camera.ip]} width={640} height={480} isActive={detecting[camera.ip]} />
                 </div>
               ) : (
                 <CardMedia
@@ -179,7 +170,7 @@ export default function Home() {
                         Detect
                       </FlatButton>
                     ) : (
-                      <FlatButton color="secondary" onClick={() => handleStopStream(camera.ip)}>
+                      <FlatButton color="secondary" onClick={() => handleStopDetect(camera.ip)}>
                         Stop Detection
                       </FlatButton>
                     )}
