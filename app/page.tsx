@@ -57,8 +57,9 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady }) => {
     pc.addEventListener('track', (event) => {
       if (videoRef.current) {
         console.log('Track event:', event.streams);
-        videoRef.current.srcObject = event.streams[0];
-        onStreamReady(event.streams[0]);
+        const stream = event.streams[0];
+        videoRef.current.srcObject = stream;
+        onStreamReady(stream);  // Pass the MediaStream to the parent component
       }
     });
 
@@ -84,7 +85,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady }) => {
         return pc.setRemoteDescription(desc);
       })
       .catch(error => console.error('Error creating or setting offer:', error));
-  }, [ip, onStreamReady]);
+  }, [ip]);
 
   useEffect(() => {
     loadStream();
@@ -117,6 +118,7 @@ export default function Home() {
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
+    // No need to set stream URL directly here since WebRTC will handle it
   };
 
   const handleStopStream = (ip: string) => {
@@ -126,7 +128,11 @@ export default function Home() {
       stream.getTracks().forEach((track) => track.stop());
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
-    setDetecting((prev) => ({ ...prev, [ip]: false }));
+  };
+
+  const handleStreamReady = (ip: string, stream: MediaStream) => {
+    console.log(`Stream ready for IP: ${ip}`, stream);
+    setStreams((prev) => ({ ...prev, [ip]: stream }));
   };
 
   const handleDetect = (ip: string) => {
@@ -137,11 +143,6 @@ export default function Home() {
   const handleStopDetect = (ip: string) => {
     console.log(`Stop detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: false }));
-  };
-
-  const handleStreamReady = (ip: string, stream: MediaStream) => {
-    console.log(`Stream ready for IP: ${ip}`);
-    setStreams((prev) => ({ ...prev, [ip]: stream }));
   };
 
   return (

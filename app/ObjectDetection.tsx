@@ -13,7 +13,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
 
   useEffect(() => {
     const loadModelAndDetect = async () => {
-      if (!isActive || !videoRef.current || !canvasRef.current || !streamUrl) return;
+      if (!isActive || !videoRef.current || !canvasRef.current) return;
 
       console.log('Initializing object detection...');
       const model = await cocoSsd.load();
@@ -23,8 +23,6 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
-      video.srcObject = streamUrl;
-      console.log('Setting video source as MediaStream:', streamUrl);
       video.onloadeddata = async () => {
         console.log('Video loaded data.');
         canvas.width = video.videoWidth;
@@ -59,7 +57,13 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         detectFrame();
       };
 
-      video.play().catch(error => console.error('Error playing video:', error));
+      if (streamUrl instanceof MediaStream) {
+        video.srcObject = streamUrl;
+        console.log('Setting video source as MediaStream:', streamUrl);
+        video.play().catch(error => console.error('Error playing video:', error));
+      } else {
+        console.error('Invalid stream URL or MediaStream:', streamUrl);
+      }
     };
 
     if (isActive) {
