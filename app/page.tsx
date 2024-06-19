@@ -118,7 +118,6 @@ export default function Home() {
 
   const handleStartStream = (ip: string) => {
     console.log(`Start stream button clicked for IP: ${ip}`);
-    // No need to set stream URL directly here since WebRTC will handle it
   };
 
   const handleStopStream = (ip: string) => {
