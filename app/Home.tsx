@@ -28,9 +28,11 @@ const Home: React.FC = () => {
   const [streams, setStreams] = useState<{ [key: string]: MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
 
-  const handleStreamReady = (ip: string, stream: MediaStream) => {
+  const handleStreamReady = (ip: string, stream: MediaStream | null) => {
     console.log(`Stream ready for IP: ${ip}`, stream);
-    setStreams((prev) => ({ ...prev, [ip]: stream }));
+    if (stream !== null) {
+      setStreams((prev) => ({ ...prev, [ip]: stream }));
+    }
   };
 
   const handleDetect = (ip: string) => {
