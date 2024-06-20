@@ -31,10 +31,9 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         const detectFrame = async () => {
           if (!isActive || !context) return;
 
+          context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas before drawing
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           const predictions = await model.detect(video);
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           predictions.forEach((prediction) => {
             context.beginPath();
@@ -74,6 +73,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
       const videoElement = videoRef.current;
       if (videoElement) {
         videoElement.pause();
+        videoElement.srcObject = null; // Clear the video source
       }
     };
   }, [isActive, streamUrl]);

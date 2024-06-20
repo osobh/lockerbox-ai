@@ -68,8 +68,15 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStrea
   }, [ip, startStream]);
 
   useEffect(() => {
-    loadStream();
-  }, [loadStream]);
+    if (startStream) {
+      loadStream();
+    } else {
+      if (videoRef.current && videoRef.current.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [startStream, loadStream]);
 
   return (
     <video
