@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection';
-import FaceDetect from './FaceDetect';
+import FaceDetect from './facedetect';
 import WebRTCVideo from './WebRTCVideo';
 
 const cameras = [
