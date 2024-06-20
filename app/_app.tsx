@@ -11,6 +11,7 @@ function MyApp({ Component, pageProps }: AppProps) {
     <React.Fragment>
       <Head>
         <meta name="viewport" content="initial-scale=1, width=device-width" />
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.js" as="script" />
       </Head>
       <ThemeProvider theme={theme}>
         <CssBaseline />

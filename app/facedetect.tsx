@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult } from '@mediapipe/tasks-vision';
+import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 
 interface FaceDetectProps {
   streamUrl: MediaStream | null;
@@ -15,7 +15,7 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
       if (!isActive || !videoRef.current || !canvasRef.current) return;
 
       console.log('Initializing face detection...');
-      
+
       const filesetResolver = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
       );
@@ -23,7 +23,7 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
         filesetResolver,
         {
           baseOptions: {
-            modelAssetPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_landmarker/face_landmarker.tflite',
+            modelAssetPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/models/face_landmarker.task',
           },
           outputFaceBlendshapes: true,
           runningMode: 'VIDEO',
@@ -33,7 +33,7 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-      
+
       video.onloadeddata = async () => {
         console.log('Video loaded data.');
         canvas.width = video.videoWidth;
@@ -42,16 +42,13 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
         const detectFrame = async () => {
           if (!isActive || !context) return;
 
-          console.log('Detecting frame...');
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-          const detections: FaceLandmarkerResult = await faceLandmarker.detectForVideo(video, Date.now());
+          const detections = await faceLandmarker.detectForVideo(video, Date.now());
 
-          console.log('Detections:', detections);
           context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           detections.faceLandmarks?.forEach((landmarks) => {
-            console.log('Drawing face landmarks:', landmarks);
             landmarks.forEach((landmark) => {
               context.beginPath();
               context.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
@@ -97,4 +94,3 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
 };
 
 export default FaceDetect;
-
