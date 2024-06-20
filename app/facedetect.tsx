@@ -100,7 +100,7 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
     <div style={{ position: 'relative', width: '100%', height: 'auto' }}>
       {isActive ? (
         <>
-          <video ref={videoRef} style={{ width: '100%', height: 'auto', display: 'none' }} />
+          <video ref={videoRef} style={{ width: '100%', height: 'auto', display: 'block' }} />
           <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', width: '100%', height: '100%' }} />
         </>
       ) : null}

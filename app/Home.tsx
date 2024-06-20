@@ -148,7 +148,4 @@ const Home: React.FC = () => {
       </Grid>
     </Container>
   );
-};
-
-export default Home;
 
