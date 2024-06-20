@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection';
+import FaceDetect from './FaceDetect';
 import WebRTCVideo from './WebRTCVideo';
 
 const cameras = [
@@ -27,6 +28,7 @@ const FlatButton = styled(Button)({
 const Home: React.FC = () => {
   const [streams, setStreams] = useState<{ [key: string]: MediaStream | null }>({});
   const [detecting, setDetecting] = useState<{ [key: string]: boolean }>({});
+  const [faceDetecting, setFaceDetecting] = useState<{ [key: string]: boolean }>({});
   const [startStream, setStartStream] = useState<{ [key: string]: boolean }>({});
 
   const handleStreamReady = (ip: string, stream: MediaStream) => {
@@ -47,7 +49,8 @@ const Home: React.FC = () => {
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
     setStartStream((prev) => ({ ...prev, [ip]: false }));
-    setDetecting((prev) => ({ ...prev, [ip]: false })); // Ensure detection stops when stream stops
+    setDetecting((prev) => ({ ...prev, [ip]: false })); // Ensure object detection stops when stream stops
+    setFaceDetecting((prev) => ({ ...prev, [ip]: false })); // Ensure face detection stops when stream stops
   };
 
   const handleDetect = (ip: string) => {
@@ -58,6 +61,20 @@ const Home: React.FC = () => {
   const handleStopDetect = (ip: string) => {
     console.log(`Stop detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: false }));
+    const videoElement = document.querySelector(`video[data-ip="${ip}"]`) as HTMLVideoElement;
+    if (videoElement) {
+      videoElement.pause();
+    }
+  };
+
+  const handleFaceDetect = (ip: string) => {
+    console.log(`Face detect button clicked for IP: ${ip}`);
+    setFaceDetecting((prev) => ({ ...prev, [ip]: true }));
+  };
+
+  const handleStopFaceDetect = (ip: string) => {
+    console.log(`Stop face detect button clicked for IP: ${ip}`);
+    setFaceDetecting((prev) => ({ ...prev, [ip]: false }));
     const videoElement = document.querySelector(`video[data-ip="${ip}"]`) as HTMLVideoElement;
     if (videoElement) {
       videoElement.pause();
@@ -75,10 +92,11 @@ const Home: React.FC = () => {
             <Card>
               {startStream[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  {!detecting[camera.ip] && (
+                  {!detecting[camera.ip] && !faceDetecting[camera.ip] && (
                     <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} startStream={startStream[camera.ip]} />
                   )}
                   <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
+                  <FaceDetect streamUrl={streams[camera.ip]} isActive={faceDetecting[camera.ip]} />
                 </div>
               ) : (
                 <CardMedia
@@ -103,13 +121,24 @@ const Home: React.FC = () => {
                     <FlatButton color="primary" onClick={() => handleStopStream(camera.ip)}>
                       Stop Stream
                     </FlatButton>
-                    {!detecting[camera.ip] ? (
-                      <FlatButton color="secondary" onClick={() => handleDetect(camera.ip)}>
-                        Detect
-                      </FlatButton>
-                    ) : (
+                    {!detecting[camera.ip] && !faceDetecting[camera.ip] && (
+                      <>
+                        <FlatButton color="secondary" onClick={() => handleDetect(camera.ip)}>
+                          Object Detect
+                        </FlatButton>
+                        <FlatButton color="secondary" onClick={() => handleFaceDetect(camera.ip)}>
+                          Face Detect
+                        </FlatButton>
+                      </>
+                    )}
+                    {detecting[camera.ip] && (
                       <FlatButton color="secondary" onClick={() => handleStopDetect(camera.ip)}>
-                        Stop Detection
+                        Stop Object Detection
+                      </FlatButton>
+                    )}
+                    {faceDetecting[camera.ip] && (
+                      <FlatButton color="secondary" onClick={() => handleStopFaceDetect(camera.ip)}>
+                        Stop Face Detection
                       </FlatButton>
                     )}
                   </>
