@@ -47,6 +47,7 @@ const Home: React.FC = () => {
     }
     setStreams((prev) => ({ ...prev, [ip]: null }));
     setStartStream((prev) => ({ ...prev, [ip]: false }));
+    setDetecting((prev) => ({ ...prev, [ip]: false })); // Ensure detection stops when stream stops
   };
 
   const handleDetect = (ip: string) => {
@@ -57,6 +58,10 @@ const Home: React.FC = () => {
   const handleStopDetect = (ip: string) => {
     console.log(`Stop detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: false }));
+    const videoElement = document.querySelector(`video[data-ip="${ip}"]`) as HTMLVideoElement;
+    if (videoElement) {
+      videoElement.pause();
+    }
   };
 
   return (
@@ -70,7 +75,9 @@ const Home: React.FC = () => {
             <Card>
               {startStream[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} startStream={startStream[camera.ip]} />
+                  {!detecting[camera.ip] && (
+                    <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} startStream={startStream[camera.ip]} />
+                  )}
                   <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
                 </div>
               ) : (

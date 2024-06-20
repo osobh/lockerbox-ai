@@ -68,9 +68,16 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStrea
   }, [ip, startStream]);
 
   useEffect(() => {
-    loadStream();
-  }, [loadStream]);
-
+    if (startStream) {
+      loadStream();
+    } else {
+      if (videoRef.current && videoRef.current.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
+        videoRef.current.srcObject = null;
+      }
+    }
+  }, [startStream, loadStream]);
+  
   return (
     <video
       ref={videoRef}
@@ -88,6 +95,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStrea
       onError={(event) => {
         console.error('Error loading video element:', event);
       }}
+      data-ip={ip} // Add data attribute for easier selection
     />
   );
 };

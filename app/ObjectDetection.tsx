@@ -12,6 +12,8 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    let animationFrameId: number;
+
     const loadModelAndDetect = async () => {
       if (!isActive || !videoRef.current || !canvasRef.current) return;
 
@@ -23,7 +25,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
-      video.onloadeddata = async () => {
+      video.onloadeddata = () => {
         console.log('Video loaded data.');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -31,12 +33,14 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         const detectFrame = async () => {
           if (!isActive || !context) return;
 
+          console.log('Starting to detect frame...');
+          context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           const predictions = await model.detect(video);
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+          console.log('Predictions:', predictions);
           predictions.forEach((prediction) => {
+            console.log('Drawing bounding box:', prediction.bbox);
             context.beginPath();
             context.rect(...prediction.bbox);
             context.lineWidth = 2;
@@ -51,7 +55,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
             context.closePath();
           });
 
-          requestAnimationFrame(detectFrame);
+          animationFrameId = requestAnimationFrame(detectFrame);
         };
 
         detectFrame();
@@ -74,14 +78,26 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
       const videoElement = videoRef.current;
       if (videoElement) {
         videoElement.pause();
+        videoElement.srcObject = null; // Clear the video source
+      }
+      if (canvasRef.current) {
+        const context = canvasRef.current.getContext('2d');
+        if (context) context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [isActive, streamUrl]);
 
   return (
-    <div style={{ position: 'relative' }}>
-      <video ref={videoRef} style={{ display: 'none' }} />
-      <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+    <div style={{ position: 'relative', width: '100%', height: 'auto' }}>
+      {isActive ? (
+        <>
+          <video ref={videoRef} style={{ width: '100%', height: 'auto', display: 'block' }} />
+          <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', width: '100%', height: '100%' }} />
+        </>
+      ) : null}
     </div>
   );
 };
