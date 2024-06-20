@@ -17,12 +17,16 @@ const FaceDetect: React.FC<FaceDetectionProps> = ({ streamUrl, isActive }) => {
       if (!isActive || !videoRef.current || !canvasRef.current) return;
 
       console.log('Initializing face detection...');
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-      await faceapi.nets.faceExpressionNet.loadFromUri('/models');
-
-      console.log('Models loaded successfully.');
+      try {
+        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+        await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+        await faceapi.nets.faceExpressionNet.loadFromUri('/models');
+        console.log('Models loaded successfully.');
+      } catch (error) {
+        console.error('Error loading face-api.js models:', error);
+        return;
+      }
 
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -36,17 +40,28 @@ const FaceDetect: React.FC<FaceDetectionProps> = ({ streamUrl, isActive }) => {
         const detectFrame = async () => {
           if (!isActive || !context) return;
 
-          console.log('Starting to detect frame...');
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-          const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceExpressions();
+          try {
+            console.log('Starting to detect frame...');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
-          console.log('Detections:', detections);
-          faceapi.matchDimensions(canvas, { width: video.videoWidth, height: video.videoHeight });
-          const resizedDetections = faceapi.resizeResults(detections, { width: video.videoWidth, height: video.videoHeight });
-          faceapi.draw.drawDetections(canvas, resizedDetections);
-          faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-          faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+            const detections = await faceapi
+              .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+              .withFaceLandmarks()
+              .withFaceExpressions();
+
+            console.log('Detections:', detections);
+            faceapi.matchDimensions(canvas, { width: video.videoWidth, height: video.videoHeight });
+            const resizedDetections = faceapi.resizeResults(detections, {
+              width: video.videoWidth,
+              height: video.videoHeight,
+            });
+            faceapi.draw.drawDetections(canvas, resizedDetections);
+            faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
+            faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+          } catch (error) {
+            console.error('Error during face detection:', error);
+          }
 
           animationFrameId = requestAnimationFrame(detectFrame);
         };
@@ -57,7 +72,7 @@ const FaceDetect: React.FC<FaceDetectionProps> = ({ streamUrl, isActive }) => {
       if (streamUrl instanceof MediaStream) {
         video.srcObject = streamUrl;
         console.log('Setting video source as MediaStream:', streamUrl);
-        video.play().catch(error => console.error('Error playing video:', error));
+        video.play().catch((error) => console.error('Error playing video:', error));
       } else {
         console.error('Invalid stream URL or MediaStream:', streamUrl);
       }
