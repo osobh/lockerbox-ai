@@ -33,11 +33,14 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         const detectFrame = async () => {
           if (!isActive || !context) return;
 
+          console.log('Starting to detect frame...');
           context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           const predictions = await model.detect(video);
 
+          console.log('Predictions:', predictions);
           predictions.forEach((prediction) => {
+            console.log('Drawing bounding box:', prediction.bbox);
             context.beginPath();
             context.rect(...prediction.bbox);
             context.lineWidth = 2;
@@ -94,5 +97,6 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
     </div>
   );
 };
+
 
 export default ObjectDetection;
