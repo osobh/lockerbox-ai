@@ -92,11 +92,14 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
 
   return (
     <div style={{ position: 'relative', width: '100%', height: 'auto' }}>
-      <video ref={videoRef} style={{ width: '100%', height: 'auto', display: 'block' }} />
-      <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', width: '100%', height: '100%' }} />
+      {isActive ? (
+        <>
+          <video ref={videoRef} style={{ width: '100%', height: 'auto', display: 'block' }} />
+          <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', width: '100%', height: '100%' }} />
+        </>
+      ) : null}
     </div>
   );
-  
 };
 
 export default ObjectDetection;
