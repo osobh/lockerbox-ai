@@ -15,61 +15,61 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
       if (!isActive || !videoRef.current || !canvasRef.current) return;
 
       console.log('Initializing face detection...');
-
-      const filesetResolver = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
-      );
-      const faceLandmarker = await FaceLandmarker.createFromOptions(
-        filesetResolver,
-        {
+      try {
+        const filesetResolver = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm');
+        const faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
           baseOptions: {
-            modelAssetPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/models/face_landmarker.task',
+            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+            delegate: 'GPU',
           },
           outputFaceBlendshapes: true,
           runningMode: 'VIDEO',
-        }
-      );
+        });
 
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
 
-      video.onloadeddata = async () => {
-        console.log('Video loaded data.');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        video.onloadeddata = async () => {
+          console.log('Video loaded data.');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
 
-        const detectFrame = async () => {
-          if (!isActive || !context) return;
+          const detectFrame = async () => {
+            if (!isActive || !context) return;
 
-          context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-          const detections = await faceLandmarker.detectForVideo(video, Date.now());
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+            const results = await faceLandmarker.detectForVideo(video, Date.now());
 
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            if (results.faceLandmarks) {
+              console.log('Detected face landmarks:', results.faceLandmarks);
+              results.faceLandmarks.forEach((landmarks) => {
+                landmarks.forEach((landmark) => {
+                  context.beginPath();
+                  context.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
+                  context.fillStyle = 'red';
+                  context.fill();
+                  context.closePath();
+                });
+              });
+            }
 
-          detections.faceLandmarks?.forEach((landmarks) => {
-            landmarks.forEach((landmark) => {
-              context.beginPath();
-              context.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
-              context.fillStyle = 'red';
-              context.fill();
-              context.closePath();
-            });
-          });
+            requestAnimationFrame(detectFrame);
+          };
 
-          requestAnimationFrame(detectFrame);
+          detectFrame();
         };
 
-        detectFrame();
-      };
-
-      if (streamUrl instanceof MediaStream) {
-        video.srcObject = streamUrl;
-        console.log('Setting video source as MediaStream:', streamUrl);
-        video.play().catch(error => console.error('Error playing video:', error));
-      } else {
-        console.error('Invalid stream URL or MediaStream:', streamUrl);
+        if (streamUrl instanceof MediaStream) {
+          video.srcObject = streamUrl;
+          console.log('Setting video source as MediaStream:', streamUrl);
+          video.play().catch(error => console.error('Error playing video:', error));
+        } else {
+          console.error('Invalid stream URL or MediaStream:', streamUrl);
+        }
+      } catch (error) {
+        console.error('Error initializing face detection:', error);
       }
     };
 
