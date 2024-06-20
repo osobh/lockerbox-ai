@@ -48,8 +48,8 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
           context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          detections.landmarks?.forEach((landmarks) => {
-            landmarks.forEach((landmark) => {
+          detections.faces?.forEach((face) => {
+            face.landmarks.forEach((landmark) => {
               context.beginPath();
               context.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
               context.fillStyle = 'red';
