@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Container, Grid, Card, CardMedia, CardContent, CardActions, Button, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import ObjectDetection from './ObjectDetection';
-import FaceDetect from './facedetect';
+import FaceDetect from './FaceDetect';
 import WebRTCVideo from './WebRTCVideo';
 
 const cameras = [
@@ -84,9 +84,13 @@ const Home: React.FC = () => {
             <Card>
               {startStream[camera.ip] ? (
                 <div style={{ position: 'relative' }}>
-                  <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} startStream={startStream[camera.ip]} />
-                  <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
-                  <FaceDetect streamUrl={streams[camera.ip]} isActive={faceDetecting[camera.ip]} />
+                  {detecting[camera.ip] ? (
+                    <ObjectDetection streamUrl={streams[camera.ip]} isActive={detecting[camera.ip]} />
+                  ) : faceDetecting[camera.ip] ? (
+                    <FaceDetect streamUrl={streams[camera.ip]} isActive={faceDetecting[camera.ip]} />
+                  ) : (
+                    <WebRTCVideo ip={camera.ip} onStreamReady={(stream) => handleStreamReady(camera.ip, stream)} startStream={startStream[camera.ip]} />
+                  )}
                 </div>
               ) : (
                 <CardMedia
@@ -111,19 +115,19 @@ const Home: React.FC = () => {
                     <FlatButton color="primary" onClick={() => handleStopStream(camera.ip)}>
                       Stop Stream
                     </FlatButton>
-                    {!detecting[camera.ip] && (
-                      <FlatButton color="secondary" onClick={() => handleDetect(camera.ip)}>
-                        Detect
-                      </FlatButton>
+                    {!detecting[camera.ip] && !faceDetecting[camera.ip] && (
+                      <>
+                        <FlatButton color="secondary" onClick={() => handleDetect(camera.ip)}>
+                          Detect
+                        </FlatButton>
+                        <FlatButton color="secondary" onClick={() => handleFaceDetect(camera.ip)}>
+                          Face Detect
+                        </FlatButton>
+                      </>
                     )}
                     {detecting[camera.ip] && (
                       <FlatButton color="secondary" onClick={() => handleStopDetect(camera.ip)}>
                         Stop Detection
-                      </FlatButton>
-                    )}
-                    {!faceDetecting[camera.ip] && (
-                      <FlatButton color="secondary" onClick={() => handleFaceDetect(camera.ip)}>
-                        Face Detect
                       </FlatButton>
                     )}
                     {faceDetecting[camera.ip] && (
@@ -147,3 +151,4 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
