@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
+import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult } from '@mediapipe/tasks-vision';
 
 interface FaceDetectProps {
   streamUrl: MediaStream | null;
@@ -43,15 +43,15 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
           if (!isActive || !context) return;
 
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-          const detections = await faceLandmarker.detectForVideo(video, Date.now());
+          const detections: FaceLandmarkerResult = await faceLandmarker.detectForVideo(video, Date.now());
 
           context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          detections?.forEach((face: any) => {
-            face.landmarks?.forEach((landmark: any) => {
+          detections.landmarks?.forEach((landmarks) => {
+            landmarks.forEach((landmark) => {
               context.beginPath();
-              context.arc(landmark.x, landmark.y, 2, 0, 2 * Math.PI);
+              context.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
               context.fillStyle = 'red';
               context.fill();
               context.closePath();
