@@ -46,9 +46,7 @@ const FaceDetect: React.FC<FaceDetectionProps> = ({ streamUrl, isActive }) => {
             context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
 
             const detections = await faceapi
-              .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-              .withFaceLandmarks()
-              .withFaceExpressions();
+              .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
 
             console.log('Detections:', detections);
             faceapi.matchDimensions(canvas, { width: video.videoWidth, height: video.videoHeight });
@@ -57,8 +55,6 @@ const FaceDetect: React.FC<FaceDetectionProps> = ({ streamUrl, isActive }) => {
               height: video.videoHeight,
             });
             faceapi.draw.drawDetections(canvas, resizedDetections);
-            faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-            faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
           } catch (error) {
             console.error('Error during face detection:', error);
           }
