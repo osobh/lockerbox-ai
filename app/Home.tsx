@@ -57,7 +57,12 @@ const Home: React.FC = () => {
   const handleStopDetect = (ip: string) => {
     console.log(`Stop detect button clicked for IP: ${ip}`);
     setDetecting((prev) => ({ ...prev, [ip]: false }));
+    const videoElement = document.querySelector(`video[data-ip="${ip}"]`) as HTMLVideoElement;
+    if (videoElement) {
+      videoElement.pause();
+    }
   };
+  
 
   return (
     <Container>

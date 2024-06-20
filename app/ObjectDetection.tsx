@@ -12,6 +12,8 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    let animationFrameId: number;
+
     const loadModelAndDetect = async () => {
       if (!isActive || !videoRef.current || !canvasRef.current) return;
 
@@ -23,7 +25,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
-      video.onloadeddata = async () => {
+      video.onloadeddata = () => {
         console.log('Video loaded data.');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -31,7 +33,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
         const detectFrame = async () => {
           if (!isActive || !context) return;
 
-          context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas before drawing
+          context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
           const predictions = await model.detect(video);
 
@@ -50,7 +52,7 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
             context.closePath();
           });
 
-          requestAnimationFrame(detectFrame);
+          animationFrameId = requestAnimationFrame(detectFrame);
         };
 
         detectFrame();
@@ -74,6 +76,13 @@ const ObjectDetection: React.FC<ObjectDetectionProps> = ({ streamUrl, isActive }
       if (videoElement) {
         videoElement.pause();
         videoElement.srcObject = null; // Clear the video source
+      }
+      if (canvasRef.current) {
+        const context = canvasRef.current.getContext('2d');
+        if (context) context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, [isActive, streamUrl]);

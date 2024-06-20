@@ -77,7 +77,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStrea
       }
     }
   }, [startStream, loadStream]);
-
+  
   return (
     <video
       ref={videoRef}
@@ -95,6 +95,7 @@ const WebRTCVideo: React.FC<WebRTCVideoProps> = ({ ip, onStreamReady, startStrea
       onError={(event) => {
         console.error('Error loading video element:', event);
       }}
+      data-ip={ip} // Add data attribute for easier selection
     />
   );
 };
