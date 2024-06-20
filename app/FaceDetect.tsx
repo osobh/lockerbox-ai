@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import '@tensorflow/tfjs';
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 
 interface FaceDetectProps {
@@ -16,7 +15,7 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
       if (!isActive || !videoRef.current || !canvasRef.current) return;
 
       console.log('Initializing face detection...');
-      
+
       const filesetResolver = await FilesetResolver.forVisionTasks(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
       );
@@ -49,8 +48,8 @@ const FaceDetect: React.FC<FaceDetectProps> = ({ streamUrl, isActive }) => {
           context.clearRect(0, 0, canvas.width, canvas.height);
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-          detections.forEach((face: any) => {
-            face.landmarks?.forEach((landmark: any) => { // Add the optional chaining operator here
+          detections?.forEach((face: any) => {
+            face.landmarks?.forEach((landmark: any) => {
               context.beginPath();
               context.arc(landmark.x, landmark.y, 2, 0, 2 * Math.PI);
               context.fillStyle = 'red';
