@@ -8,7 +8,7 @@ import FaceDetect from './facedetect';
 import WebRTCVideo from './WebRTCVideo';
 
 const cameras = [
-  { hostname: 'gitlab.lan', ip: '192.168.68.67', port: '8889', name: 'Gitlab' },
+  { hostname: 'gitlab.lan', ip: '192.168.68.74', port: '8889', name: 'Gitlab' },
   { hostname: 'rpi04.lan', ip: '192.168.68.76', port: '8889', name: 'Rpi04' },
 ];
 
